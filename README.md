@@ -1,4 +1,5 @@
 # university-web
+https://roman-manzhelii.github.io/university-web
 
 Simple React SPA that consumes the **UniversityAPI**.
 
