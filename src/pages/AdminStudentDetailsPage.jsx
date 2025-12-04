@@ -25,6 +25,13 @@ export default function AdminStudentDetailsPage() {
     const [gradeEdits, setGradeEdits] = useState({});
     const [savingGrade, setSavingGrade] = useState(false);
 
+    const [accountForm, setAccountForm] = useState({
+        email: "",
+        password: "",
+    });
+    const [savingAccount, setSavingAccount] = useState(false);
+    const [accountMessage, setAccountMessage] = useState(null);
+
     const reload = async () => {
         if (!token || !isAdmin) return;
 
@@ -154,6 +161,43 @@ export default function AdminStudentDetailsPage() {
         }
     };
 
+    const handleAccountChange = (e) => {
+        const { name, value } = e.target;
+        setAccountForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleAccountSubmit = async (e) => {
+        e.preventDefault();
+        if (!token || !isAdmin) return;
+
+        setSavingAccount(true);
+        setAccountMessage(null);
+        setError(null);
+
+        try {
+            await apiPost(
+                "/api/auth/register-student",
+                {
+                    studentId: studentId,
+                    email: accountForm.email,
+                    password: accountForm.password,
+                },
+                token
+            );
+
+            setAccountForm({ email: "", password: "" });
+            setAccountMessage("Student account has been created.");
+        } catch (err) {
+            setAccountMessage(null);
+            setError(err.message || "Failed to register student account");
+        } finally {
+            setSavingAccount(false);
+        }
+    };
+
     if (!student) {
         if (error) {
             return <p className="text-error">{error}</p>;
@@ -174,6 +218,7 @@ export default function AdminStudentDetailsPage() {
             </p>
 
             {error && <p className="text-error">{error}</p>}
+            {accountMessage && <p>{accountMessage}</p>}
 
             <section className="section">
                 <h3>Student info</h3>
@@ -212,6 +257,37 @@ export default function AdminStudentDetailsPage() {
                     </div>
                     <button className="button" type="submit" disabled={savingStudent}>
                         {savingStudent ? "Saving..." : "Save student"}
+                    </button>
+                </form>
+            </section>
+
+            <section className="section">
+                <h3>Student login account</h3>
+                <form className="form" onSubmit={handleAccountSubmit}>
+                    <div className="form-field">
+                        <label htmlFor="accountEmail">Email</label>
+                        <input
+                            id="accountEmail"
+                            name="email"
+                            type="email"
+                            value={accountForm.email}
+                            onChange={handleAccountChange}
+                            required
+                        />
+                    </div>
+                    <div className="form-field">
+                        <label htmlFor="accountPassword">Initial password</label>
+                        <input
+                            id="accountPassword"
+                            name="password"
+                            type="password"
+                            value={accountForm.password}
+                            onChange={handleAccountChange}
+                            required
+                        />
+                    </div>
+                    <button className="button" type="submit" disabled={savingAccount}>
+                        {savingAccount ? "Creating..." : "Create login account"}
                     </button>
                 </form>
             </section>

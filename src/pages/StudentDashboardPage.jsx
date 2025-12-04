@@ -9,6 +9,12 @@ export default function StudentDashboardPage() {
     const [allCourses, setAllCourses] = useState([]);
     const [error, setError] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmNewPassword, setConfirmNewPassword] = useState("");
+    const [changeError, setChangeError] = useState(null);
+    const [changeSuccess, setChangeSuccess] = useState(null);
+    const [changing, setChanging] = useState(false);
 
     const loadEnrollments = async () => {
         if (!token || studentId == null) return;
@@ -77,6 +83,45 @@ export default function StudentDashboardPage() {
             setError(err.message || "Failed to unenroll from course");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleChangePasswordSubmit = async (e) => {
+        e.preventDefault();
+
+        setChangeError(null);
+        setChangeSuccess(null);
+
+        if (!token) {
+            setChangeError("You must be logged in to change password.");
+            return;
+        }
+
+        if (newPassword !== confirmNewPassword) {
+            setChangeError("New password and confirmation do not match.");
+            return;
+        }
+
+        setChanging(true);
+
+        try {
+            await apiPost(
+                "/api/auth/change-password",
+                {
+                    currentPassword,
+                    newPassword,
+                },
+                token
+            );
+
+            setChangeSuccess("Password changed successfully.");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmNewPassword("");
+        } catch (err) {
+            setChangeError(err.message || "Failed to change password.");
+        } finally {
+            setChanging(false);
         }
     };
 
@@ -197,6 +242,55 @@ export default function StudentDashboardPage() {
                     </table>
                 )}
             </section>
+
+            {token && (
+                <section className="section" style={{ marginTop: "2rem" }}>
+                    <h3>Change password</h3>
+                    <form onSubmit={handleChangePasswordSubmit}>
+                        <div className="form-field">
+                            <label htmlFor="currentPassword">Current password</label>
+                            <input
+                                id="currentPassword"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-field">
+                            <label htmlFor="newPassword">New password</label>
+                            <input
+                                id="newPassword"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-field">
+                            <label htmlFor="confirmNewPassword">
+                                Confirm new password
+                            </label>
+                            <input
+                                id="confirmNewPassword"
+                                type="password"
+                                value={confirmNewPassword}
+                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        {changeError && <p className="text-error">{changeError}</p>}
+                        {changeSuccess && <p>{changeSuccess}</p>}
+
+                        <button className="button" type="submit" disabled={changing}>
+                            {changing ? "Changing..." : "Change password"}
+                        </button>
+                    </form>
+                </section>
+            )}
         </div>
     );
 }
